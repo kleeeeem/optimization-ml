@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.vscode/
+.DS_Store
+data/raw/*
+*.csv
+*.xlsx
+venv/
+env/
+src/data/processed/*.csv
