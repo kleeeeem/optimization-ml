@@ -1,18 +1,14 @@
 import pandas as pd
-import numpy as np
 from pathlib import Path
 import joblib
 import warnings
 warnings.filterwarnings('ignore')
 
 def generate_signals():
-    print("📥 Загрузка модели и свежих данных...")
-    
-    # Пути относительно корня проекта
     root = Path('.')
-    model_path = root / 'src/models/price_model.pkl'
-    features_path = root / 'src/models/feature_names.pkl'
-    data_path = root / 'src/data/processed/stocks_with_features.csv'
+    model_path = root / '../models/price_model.pkl'
+    features_path = root / '../models/feature_names.pkl'
+    data_path = root / '../data/processed/stocks_with_features.csv'
     
     if not model_path.exists():
         raise FileNotFoundError("Модель не найдена. Сначала запустите train.py")
@@ -45,7 +41,7 @@ def generate_signals():
     
     signals['expected_return'] = (signals['prob_up'] - 0.5) * 0.003 * 5
     
-    # risk_proxy: нормализованная волатильность (используется как σ в матрице ковариации)
+    # risk_proxy: нормализованная волатильность (используется как sigma в матрице ковариации)
     signals['risk'] = signals['volatility'] / 100
     
     # liquidity: средний дневной объем (ограничение доли позиции)
@@ -54,7 +50,7 @@ def generate_signals():
     # фильтр: отбрасываем активы, где модель почти не видит роста
     signals = signals[signals['prob_up'] >= 0.45]
     
-    out_path = root / 'src/data/processed/ml_signals_for_optimizer.csv'
+    out_path = root / '../data/processed/ml_signals_for_optimizer.csv'
     out_path.parent.mkdir(parents=True, exist_ok=True)
     signals.to_csv(out_path, index=False)
     

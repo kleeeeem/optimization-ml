@@ -33,7 +33,7 @@ def time_split(df, features):
            (X[test_mask], y[test_mask], returns[test_mask])
 
 def train_model():
-    csv_path = Path('src/data/processed/stocks_with_features.csv')
+    csv_path = Path('../../src/data/processed/stocks_with_features.csv')
     if not csv_path.exists():
         raise FileNotFoundError(f"Файл не найден: {csv_path}")
         
@@ -78,8 +78,7 @@ def train_model():
     else:
         print("Нет сигналов 'Buy' на тесте")
         
-    # Сохранение
-    out_dir = Path('src/models')
+    out_dir = Path('../models')
     out_dir.mkdir(parents=True, exist_ok=True)
     
     joblib.dump(model, out_dir / 'price_model.pkl')

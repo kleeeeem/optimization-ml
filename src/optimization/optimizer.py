@@ -13,8 +13,8 @@ def run_optimizer(
     top_n_assets: int = 10
 ):
     root = Path('.')
-    signals_path = root / 'src/data/processed/ml_signals_for_optimizer.csv'
-    data_path = root / 'src/data/processed/stocks_with_features.csv'
+    signals_path = root / '../data/processed/ml_signals_for_optimizer.csv'
+    data_path = root / '../data/processed/stocks_with_features.csv'
 
     # 1. ML-сигналы (ожидаемая доходность, ликвидность, вероятность роста)
     signals = pd.read_csv(signals_path)
@@ -85,7 +85,7 @@ def run_optimizer(
     print(f"️ Уровень риска (дисперсия портфеля): {portfolio_risk.value:.6f}")
 
     # Сохранение
-    out_path = root / 'src/data/processed/portfolio_allocation.csv'
+    out_path = root / '../data/processed/portfolio_allocation.csv'
     result_df.to_csv(out_path, index=False)
     print(f"\nРаспределение сохранено в {out_path}")
     

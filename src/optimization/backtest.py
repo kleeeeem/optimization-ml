@@ -7,7 +7,7 @@ warnings.filterwarnings('ignore')
 
 def analyze_signal_decay(df, prob_col='prob_up', threshold=None):
     """Проверяет, на каком горизонте ML-сигнал ещё прибылен"""
-    print("🔍 Анализ затухания сигнала...")
+    print("Анализ затухания сигнала...")
     
     # Если порог не задан или слишком строгий, берем медиану или 0.50
     if threshold is None:
@@ -21,7 +21,7 @@ def analyze_signal_decay(df, prob_col='prob_up', threshold=None):
     n_signals = mask.sum()
 
     if n_signals == 0:
-        print(f"⚠️ Нет сигналов с prob_up >= {threshold}. Уменьшите порог или используйте квантили.")
+        print(f"Нет сигналов с prob_up >= {threshold}. Уменьшите порог или используйте квантили.")
         return pd.DataFrame()
 
     decay = []
@@ -34,7 +34,7 @@ def analyze_signal_decay(df, prob_col='prob_up', threshold=None):
 
 def run_portfolio_backtest(df, prob_col='prob_up', initial_capital=10000, tx_cost=0.002, rebalance_freq=21):
     """Векторизированный бэктест: ежемесячная ребалансировка по ML-вероятностям"""
-    print("📈 Симуляция портфеля с ML-ребалансировкой...")
+    print("Симуляция портфеля с ML-ребалансировкой...")
     
     dates = df['date'].unique()
     dates = np.sort(dates)
@@ -98,11 +98,11 @@ def compute_metrics(equity_curve, risk_free_rate=0.02):
     }
 
 def main():
-    print("📥 Загрузка данных и модели...")
+    print("Загрузка данных и модели...")
     root = Path('.')
-    data_path = root / 'src/data/processed/stocks_with_features.csv'
-    model_path = root / 'src/models/price_model.pkl'
-    features_path = root / 'src/models/feature_names.pkl'
+    data_path = root / '../data/processed/stocks_with_features.csv'
+    model_path = root / '../models/price_model.pkl'
+    features_path = root / '../models/feature_names.pkl'
     
     df = pd.read_csv(data_path, parse_dates=['date'])
     model = joblib.load(model_path)
@@ -114,23 +114,23 @@ def main():
                'close', 'volume', 'high', 'low', 'open', 'dollar_volume', 'dollar_vol_ma20']
     valid_features = [f for f in features if f in test_df.columns and f not in exclude]
     
-    print(f"🤖 Генерация прогнозов на {len(test_df)} строк...")
+    print(f"Генерация прогнозов на {len(test_df)} строк...")
     test_df['prob_up'] = model.predict(test_df[valid_features])
     
-    # 1️ Анализ затухания (исправленный порог)
+    # 1️. Анализ затухания (исправленный порог)
     decay_df = analyze_signal_decay(test_df, threshold=0.50)
-    print("\n📊 Затухание ML-сигнала:")
+    print("\nЗатухание ML-сигнала:")
     print(decay_df.to_string(index=False) if not decay_df.empty else "Нет данных для анализа")
     
-    # 2️⃣ Бэктест ML-портфеля
+    # 2️. Бэктест ML-портфеля
     ml_equity, ml_trades = run_portfolio_backtest(test_df, prob_col='prob_up', initial_capital=10000, tx_cost=0.002, rebalance_freq=21)
     ml_metrics = compute_metrics(ml_equity)
     
-    # 3️ Бэктест Buy & Hold
+    # 3️. Бэктест Buy & Hold
     bh_equity, _ = run_portfolio_backtest(test_df, prob_col='prob_up', initial_capital=10000, tx_cost=0.0, rebalance_freq=999)
     bh_metrics = compute_metrics(bh_equity)
     
-    print("\n📈 Результаты бэктеста (2023-2024):")
+    print("\nРезультаты бэктеста (2023-2024):")
     print(f"{'Метрика':<20} | {'ML-портфель':<12} | {'Buy & Hold':<12}")
     print("-" * 48)
     print(f"{'Итоговая доходность':<20} | {ml_metrics['total_return']:>10.2%} | {bh_metrics['total_return']:>10.2%}")
@@ -139,22 +139,21 @@ def main():
     print(f"{'Sharpe Ratio':<20} | {ml_metrics['sharpe_ratio']:>10.2f} | {bh_metrics['sharpe_ratio']:>10.2f}")
     print(f"{'Кол-во сделок':<20} | {ml_trades:>10} | {'-':<12}")
     
-    # 4️⃣ Безопасный расчет горизонта
+    # 4️. Безопасный расчет горизонта
     if decay_df.empty or decay_df['avg_return'].isna().all():
         optimal_horizon = 5
-        print("\n⚠️ Сигналы редкие или порог слишком строгий. Используем стандартный горизонт 5 дней.")
+        print("\nСигналы редкие или порог слишком строгий. Используем стандартный горизонт 5 дней.")
     else:
         safe_idx = decay_df['avg_return'].dropna().idxmax()
         optimal_horizon = decay_df.loc[safe_idx, 'horizon_days']
         
-    print("\n✅ ВЫВОД ОБ АКТУАЛЬНОСТИ:")
+    print("\nВЫВОД ОБ АКТУАЛЬНОСТИ:")
     print(f"• ML-сигналы актуальны на горизонте ~{optimal_horizon} дней.")
     print(f"• Рекомендуется ребалансировка или фиксация прибыли каждые {optimal_horizon} торговых дней.")
     print(f"• Sharpe ML-портфеля: {ml_metrics['sharpe_ratio']:.2f} vs Buy&Hold: {bh_metrics['sharpe_ratio']:.2f}")
     print(f"• Комиссии {0.2:.1%} частично компенсируются фильтрацией слабых сигналов.")
-    
-        # Сохранение отчёта (без зависимости от tabulate)
-    report_path = root / 'src/data/processed/backtest_report.md'
+
+    report_path = root / '../data/processed/backtest_report.md'
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write("# Отчёт по актуальности ML-сигналов и бэктест\n\n")
         f.write("## Затухание сигнала\n```\n")
@@ -164,6 +163,6 @@ def main():
         f.write("## Заключение\n")
         f.write(f"Сигналы модели актуальны для торговли на горизонте **1-{optimal_horizon} дней**.\n")
         f.write(f"Рекомендуется фиксировать прибыль или ребалансировать портфель не реже чем раз в {optimal_horizon} торговых дней.\n")
-    print(f"\n💾 Отчёт сохранён в {report_path}")
+    print(f"\nОтчёт сохранён в {report_path}")
 if __name__ == '__main__':
     main()
